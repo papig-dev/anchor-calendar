@@ -28,6 +28,14 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Utility",
+    "shortDescription": "심플 데스크톱 달력 앱",
+    "longDescription": "Anchor Calendar - 심플하고 조용한 데스크톱 달력 앱",
+    "windows": {
+      "wix": {
+        "language": ["ko-KR", "en-US"]
+      }
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
