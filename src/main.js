@@ -7,6 +7,7 @@ let today = new Date();
 today.setHours(0, 0, 0, 0);
 let holidays = {};
 let selectedHolidayKey = null;
+let isAlwaysOnTop = true; // Default to always on top
 
 // Load holidays.json
 async function loadHolidays() {
@@ -27,12 +28,39 @@ async function saveHolidays() {
   renderMonthlyView();
 }
 
+// Toggle always on top
+async function toggleAlwaysOnTop() {
+  const { getCurrentWindow } = window.__TAURI__.window;
+  const mainWindow = getCurrentWindow();
+  
+  try {
+    isAlwaysOnTop = !isAlwaysOnTop;
+    await mainWindow.setAlwaysOnTop(isAlwaysOnTop);
+    
+    // Update pin button states
+    const pinBtns = document.querySelectorAll('.pin-btn');
+    pinBtns.forEach(btn => {
+      if (isAlwaysOnTop) {
+        btn.classList.add('pinned');
+        btn.title = '항상 위 해제';
+        btn.textContent = '📌'; // Pinned icon
+      } else {
+        btn.classList.remove('pinned');
+        btn.title = '항상 위 설정';
+        btn.textContent = '📎'; // Unpinned icon
+      }
+    });
+  } catch (e) {
+    console.error('Failed to toggle always on top:', e);
+  }
+}
+
 // Format YYYY.MM
 function formatYearMonth(y, m) {
   return `${y}.${String(m + 1).padStart(2, '0')}`;
 }
 
-// Render monthly view (6x7 grid)
+// Render monthly view (5x7 grid)
 function renderMonthlyView() {
   const grid = document.getElementById('calendar-grid');
   grid.innerHTML = '';
@@ -52,7 +80,7 @@ function renderMonthlyView() {
     return `${year}-${month}-${day}`;
   }
 
-  for (let i = 0; i < 42; i++) {
+  for (let i = 0; i < 35; i++) { // Changed from 42 to 35 (5 weeks)
     const cellDate = new Date(startDate);
     cellDate.setDate(startDate.getDate() + i);
 
@@ -130,7 +158,7 @@ function renderYearlyView() {
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-    for (let i = 0; i < 42; i++) {
+    for (let i = 0; i < 35; i++) { // Changed from 42 to 35 (5 weeks)
       const cellDate = new Date(startDate);
       cellDate.setDate(startDate.getDate() + i);
 
@@ -317,8 +345,27 @@ document.getElementById('add-holiday').addEventListener('click', addHoliday);
 document.getElementById('update-holiday').addEventListener('click', updateHoliday);
 document.getElementById('delete-holiday').addEventListener('click', deleteHoliday);
 
+// Pin buttons
+document.getElementById('btn-pin').addEventListener('click', toggleAlwaysOnTop);
+document.getElementById('btn-pin-y').addEventListener('click', toggleAlwaysOnTop);
+
 // Init
 window.addEventListener('DOMContentLoaded', async () => {
   await loadHolidays();
+  
+  // Initialize pin button state
+  const pinBtns = document.querySelectorAll('.pin-btn');
+  pinBtns.forEach(btn => {
+    if (isAlwaysOnTop) {
+      btn.classList.add('pinned');
+      btn.title = '항상 위 해제';
+      btn.textContent = '📌'; // Pinned icon
+    } else {
+      btn.classList.remove('pinned');
+      btn.title = '항상 위 설정';
+      btn.textContent = '📎'; // Unpinned icon
+    }
+  });
+  
   switchToMonthlyView(); // Always start in Monthly View
 });
