@@ -8,11 +8,21 @@ today.setHours(0, 0, 0, 0);
 let holidays = {};
 let selectedHolidayKey = null;
 let isAlwaysOnTop = true; // Default to always on top
+let holidayRefreshTimer = null;
+
+function sortHolidayMapByDate(input) {
+  return Object.keys(input)
+    .sort()
+    .reduce((acc, key) => {
+      acc[key] = input[key];
+      return acc;
+    }, {});
+}
 
 // Load holidays.json
 async function loadHolidays() {
   try {
-    const resp = await fetch('./holidays.json');
+    const resp = await fetch(`./holidays.json?v=${Date.now()}`, { cache: 'no-store' });
     if (resp.ok) {
       holidays = await resp.json();
     }
@@ -21,11 +31,47 @@ async function loadHolidays() {
   }
 }
 
-// Save holidays to file (simplified - just update in memory and reload)
-async function saveHolidays() {
-  // For now, just reload the calendar
-  // In production, you'd use Tauri's file system API
+// Close app window
+async function closeAppWindow() {
+  const { getCurrentWindow } = window.__TAURI__.window;
+  const mainWindow = getCurrentWindow();
+
+  try {
+    await mainWindow.close();
+  } catch (e) {
+    console.error('Failed to close window:', e);
+  }
+}
+
+async function refreshHolidaysIfChanged() {
+  const prev = JSON.stringify(holidays);
+  await loadHolidays();
+  if (JSON.stringify(holidays) === prev) return;
+
   renderMonthlyView();
+  updateMonthLabel();
+
+  if (!document.getElementById('yearly-view').classList.contains('hidden')) {
+    renderYearlyView();
+    updateYearLabel();
+  }
+
+  if (!document.getElementById('holiday-modal').classList.contains('hidden')) {
+    renderHolidayList();
+  }
+}
+
+// Save holidays to file
+async function saveHolidays() {
+  try {
+    const { invoke } = window.__TAURI__.core;
+    const payload = `${JSON.stringify(sortHolidayMapByDate(holidays), null, 2)}\n`;
+    await invoke('save_holidays', { payload });
+    await loadHolidays();
+    renderMonthlyView();
+  } catch (e) {
+    console.error('Failed to save holidays:', e);
+  }
 }
 
 // Toggle always on top
@@ -52,6 +98,20 @@ async function toggleAlwaysOnTop() {
     });
   } catch (e) {
     console.error('Failed to toggle always on top:', e);
+  }
+}
+
+// Set window opacity
+async function setOpacity(value) {
+  try {
+    const normalized = Math.max(30, Math.min(100, Number(value)));
+    const opacity = normalized / 100;
+    document.documentElement.style.setProperty('--window-alpha', String(opacity));
+    
+    // Save opacity to localStorage
+    localStorage.setItem('windowOpacity', String(normalized));
+  } catch (e) {
+    console.error('Failed to set opacity:', e);
   }
 }
 
@@ -349,6 +409,21 @@ document.getElementById('delete-holiday').addEventListener('click', deleteHolida
 document.getElementById('btn-pin').addEventListener('click', toggleAlwaysOnTop);
 document.getElementById('btn-pin-y').addEventListener('click', toggleAlwaysOnTop);
 
+// Close buttons
+document.getElementById('btn-close').addEventListener('click', closeAppWindow);
+document.getElementById('btn-close-y').addEventListener('click', closeAppWindow);
+
+// Opacity sliders
+document.getElementById('opacity-slider').addEventListener('input', (e) => {
+  setOpacity(e.target.value);
+  document.getElementById('opacity-slider-y').value = e.target.value;
+});
+
+document.getElementById('opacity-slider-y').addEventListener('input', (e) => {
+  setOpacity(e.target.value);
+  document.getElementById('opacity-slider').value = e.target.value;
+});
+
 // Init
 window.addEventListener('DOMContentLoaded', async () => {
   await loadHolidays();
@@ -366,6 +441,15 @@ window.addEventListener('DOMContentLoaded', async () => {
       btn.textContent = '📎'; // Unpinned icon
     }
   });
+  
+  // Initialize opacity from localStorage
+  const savedOpacity = localStorage.getItem('windowOpacity') || '100';
+  document.getElementById('opacity-slider').value = savedOpacity;
+  document.getElementById('opacity-slider-y').value = savedOpacity;
+  setOpacity(savedOpacity);
+
+  if (holidayRefreshTimer) clearInterval(holidayRefreshTimer);
+  holidayRefreshTimer = setInterval(refreshHolidaysIfChanged, 3000);
   
   switchToMonthlyView(); // Always start in Monthly View
 });

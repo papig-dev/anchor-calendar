@@ -13,6 +13,10 @@
     <!-- Monthly View -->
     <div id="monthly-view" class="view">
       <div class="nav-bar">
+        <div class="window-controls">
+          <button id="btn-close" class="close-app-btn" title="앱 종료">✕</button>
+          <div class="drag-handle" data-tauri-drag-region title="창 이동">⋮⋮</div>
+        </div>
         <button id="prev-month" class="nav-btn">◀</button>
         <span id="current-month">YYYY.MM</span>
         <button id="next-month" class="nav-btn">▶</button>
@@ -23,6 +27,9 @@
         <div class="button-group">
           <button id="btn-edit-holidays" class="edit-btn" title="공휴일 편집">⚙️</button>
           <button id="btn-pin" class="pin-btn" title="항상 위 토글">📌</button>
+        </div>
+        <div class="opacity-control">
+          <input type="range" id="opacity-slider" min="30" max="100" value="100" class="opacity-slider" title="투명도 조절">
         </div>
       </div>
       <div class="weekdays">
@@ -36,6 +43,10 @@
     <!-- Yearly View -->
     <div id="yearly-view" class="view hidden">
       <div class="nav-bar">
+        <div class="window-controls">
+          <button id="btn-close-y" class="close-app-btn" title="앱 종료">✕</button>
+          <div class="drag-handle" data-tauri-drag-region title="창 이동">⋮⋮</div>
+        </div>
         <button id="prev-year" class="nav-btn">◀</button>
         <span id="current-year">YYYY</span>
         <button id="next-year" class="nav-btn">▶</button>
@@ -46,6 +57,9 @@
         <div class="button-group">
           <button id="btn-edit-holidays-y" class="edit-btn" title="공휴일 편집">⚙️</button>
           <button id="btn-pin-y" class="pin-btn" title="항상 위 토글">📌</button>
+        </div>
+        <div class="opacity-control">
+          <input type="range" id="opacity-slider-y" min="30" max="100" value="100" class="opacity-slider" title="투명도 조절">
         </div>
       </div>
       <div id="year-grid" class="year-grid">
